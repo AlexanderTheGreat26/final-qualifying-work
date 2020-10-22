@@ -26,8 +26,8 @@ void pass(std::complex<double>& jPssd, double& D, double k1, double k2) {
     const auto i = std::complex<double>(0, 1);
     std::complex<double> d3pow2 = -(4.0*std::pow(k2, 2) * std::exp(-a * k1 * (2.0*i)) * std::exp(a*k2*(2.0*i)) *
                                     std::pow((k1 * (2.0*i) - k2 * i), 2)) / std::pow((k1*k2 - std::pow(k1, 2) *
-                                                                                              std::exp(a * k2 * (2.0*i)) - std::pow(k2, 2) * std::exp(a * k2 * (2.0*i)) +
-                                                                                      std::pow(k1, 2) + 2.0 * k1 * k2 * std::exp(a * k2 * (2.0*i))), 2);
+                                    std::exp(a * k2 * (2.0*i)) - std::pow(k2, 2) * std::exp(a * k2 * (2.0*i)) +
+                                    std::pow(k1, 2) + 2.0 * k1 * k2 * std::exp(a * k2 * (2.0*i))), 2);
     std::complex<double> jInc = h * k1 / m; //Incoming flow for current barrier.
     jPssd = h * k1 / m / d3pow2;
     D = std::abs(jPssd / jInc);
