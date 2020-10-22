@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/ReflectionOnShieldedCoulombPotential.dir/main.cpp.o  -o ReflectionOnShieldedCoulombPotential 
+/usr/bin/c++   -std=c++14 -fopenmp -g   CMakeFiles/ReflectionOnShieldedCoulombPotential.dir/main.cpp.o  -o ReflectionOnShieldedCoulombPotential 
