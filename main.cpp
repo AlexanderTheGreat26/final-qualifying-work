@@ -1,8 +1,3 @@
-/*The program below consider the problems of particle fling over the semi-infinite potential of rectangular barriers
- * located at a distance from each other much more than their characteristic size (a) at different initial values of
- * energy (E).
- */
-
 #include <iostream>
 #include <cmath>
 #include <complex>
@@ -14,14 +9,40 @@
 #include <tuple>
 #include "omp.h"
 
+//Basic constants
+const double h = 1.054571817e-34; //Planck's constant divided by 2*pi.
+const double e = -1.6021766208e-19; //Electron charge.
+const double N_A =  6.02214076e23; //Avogadro constant.
+const double TFconst = 0.8853; //Tomas-Fermi constant.
+const double a_0 = 0.52917720859e-8; //Bohr radius.
 
-const double Ev = 1.602176634e-19;
-const double m = 1.6726219e-27; //Mass of particle.
-const double h = 1.054571817e-34; //Planck's constant.
-const double a = 1e-10; //characteristic size.
-const double U = 19*Ev; //Default height of the barrier.
-//const double eps = 1e-13; //Used for dropping cases of super deep penetration.'
 
+//Incoming atom
+const double Z1 = 1; //Number in the periodic table.
+const double m = 1.6726219e-24; //Atomic mass.
+
+//Material properties
+const double Z2 = 13; //Number in the periodic table.
+const double m_a = 26.9815386; //Atomic mass.
+const double rho = 2.6989; //Density.
+const double N = 1.0 / m_a * N_A * rho; //The number of atoms in one cubic centimeter.
+
+//Firsov's potential
+const double a = 0.7111;
+const double b = 0.2889;
+const double alpha = 0.175;
+const double beta = alpha / 9.5;
+const double A_F = a_0 * TFconst * std::pow(std::sqrt(Z1) + std::sqrt(Z1), -(2.0/3.0));
+
+//Program constants
+const int sample = 1e4;
+const double eps = 1.0/sample;
+
+
+double ScreenedCoulombPotential (double r){
+    return (Z1 * Z2 * std::pow(e, 2) / r) *
+           std::pow(a * std::exp(-(alpha/A_F) * r) + b * std::exp(-(beta/A_F)*r), 2);
+}
 
 void pass(std::complex<double>& jPssd, double& D, double k1, double k2) {
     //Function counts the passed flow (jPssd) and transmission coefficient (D) for every task.
@@ -33,6 +54,42 @@ void pass(std::complex<double>& jPssd, double& D, double k1, double k2) {
     std::complex<double> jInc = h * k1 / m;
     jPssd = h * k1 / m / d3pow2;
     D = std::abs(jPssd / jInc);
+}
+
+std::vector<double> SimpleSplineMoments(std::vector<double>& f, double step) {
+    std::vector<double> moments;
+    unsigned n = f.size()-1;
+    moments.push_back((3*f[0] - 4*f[1] + f[2])/2.0/step);
+    for(unsigned i = 1; i < n; i++)
+        moments.push_back((f[i+1] - f[i-1])/2.0/step);
+    moments.push_back((-3*f[n] + 4*f[n-1] - f[n-2])/2.0/step);
+    return moments;
+}
+
+std::vector<double> CubicSpline(std::vector<double>& x, std::vector<double>& f, std::vector<double>& xx){
+    //Function returns vector of spline points.
+    std::vector<double> yy;
+    double step = x[1] - x[0];
+    unsigned i = 0;
+    std::vector<double> moments = SimpleSplineMoments(f, step);
+    for(unsigned j = 0; j < x.size()-1; j++)
+        while(xx[i] >= x[j] && xx[i] <= x[j+1]){
+            double buf1 = x[j+1] - xx[i];
+            double buf2 = xx[i] - x[j];
+            yy.push_back(pow(buf1, 2)*(2*buf2+h)*f[j]/pow(h, 3)+
+                         pow(buf2, 2)*(2*buf1+h)*f[j+1]/pow(h, 3)+
+                         pow(buf1, 2)*buf2*moments[j]/pow(h, 2)-
+                         pow(buf2, 2)*buf1*moments[j+1]/pow(h, 2));
+            i++;
+        }
+    return yy;
+}
+
+double ConstStepTrapIntegral(std::vector<double>& x, std::vector<double>& f) {
+    double I = 0;
+    for(unsigned i = 1; i < x.size(); i++)
+        I += (f[i-1] + f[i]) / 2.0 * (x[i] - x[i-1]);
+    return I;
 }
 
 std::tuple<double, double, unsigned long> Reflection(double E) {
@@ -54,6 +111,10 @@ std::tuple<double, double, unsigned long> Reflection(double E) {
         }
         l++;
     } while (E > U); // && std::abs(E - buf) >= eps * buf); //The case of tunneling is not considered.
+    double x0 = 0; //Just a start point for grid.
+    std::vector<double> grid (sample + 1);
+    std::generate(grid.begin(), grid.end(), [&] {return x0 += eps;});
+    std::vector<double> spline = CubicSpline(l, Ex, grid);
     double R = 1 - std::abs(jPssd / jInc);
     return std::make_tuple(Ebuf, R, l);
 }
