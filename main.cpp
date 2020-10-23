@@ -11,49 +11,60 @@
 
 //Basic constants
 const double h = 1.054571817e-34; //Planck's constant divided by 2*pi.
-const double e = -1.6021766208e-19; //Electron charge.
+const double e = -1.6021766208e-19; //Electron charge. //?!
 const double N_A =  6.02214076e23; //Avogadro constant.
-const double TFconst = 0.8853; //Tomas-Fermi constant.
-const double a_0 = 0.52917720859e-8; //Bohr radius.
-
+const double a_TF = 0.47e-8; //Bohr radius.
 
 //Incoming atom
 const double Z1 = 1; //Number in the periodic table.
-const double m = 1.6726219e-24; //Atomic mass.
+const double m_1 = 1.6726219e-24; //Atomic mass.
 
 //Material properties
 const double Z2 = 13; //Number in the periodic table.
 const double m_a = 26.9815386; //Atomic mass.
 const double rho = 2.6989; //Density.
 const double N = 1.0 / m_a * N_A * rho; //The number of atoms in one cubic centimeter.
+const double m_2 = 1.660539066601e-24 * 26.981539;
 
-//Firsov's potential
-const double a = 0.7111;
-const double b = 0.2889;
-const double alpha = 0.175;
-const double beta = alpha / 9.5;
-const double A_F = a_0 * TFconst * std::pow(std::sqrt(Z1) + std::sqrt(Z1), -(2.0/3.0));
+//Problem constants
+const double m = (m_1*m_2) / (m_1 + m_2);
+const double factor = (0.831 * Z1 * Z2 * std::pow(e, 2)) /
+                      (2 * std::sqrt(std::pow(Z1, (2.0/3.0)) + std::pow(Z2, (2.0/3.0)))) * a_TF;
 
 //Program constants
 const int sample = 1e4;
 const double eps = 1.0/sample;
 
-
-double ScreenedCoulombPotential (double r){
-    return (Z1 * Z2 * std::pow(e, 2) / r) *
-           std::pow(a * std::exp(-(alpha/A_F) * r) + b * std::exp(-(beta/A_F)*r), 2);
+double ScreenedCoulombPotential (double r) {
+    return factor / std::pow(r, 2);
 }
 
-void pass(std::complex<double>& jPssd, double& D, double k1, double k2) {
-    //Function counts the passed flow (jPssd) and transmission coefficient (D) for every task.
-    const auto i = std::complex<double>(0, 1);
-    std::complex<double> d3pow2 = -(4.0*std::pow(k2, 2) * std::exp(-a * k1 * (2.0*i)) * std::exp(a*k2*(2.0*i)) *
-                                    std::pow((k1 * (2.0*i) - k2 * i), 2)) / std::pow((k1*k2 - std::pow(k1, 2) *
-                                    std::exp(a * k2 * (2.0*i)) - std::pow(k2, 2) * std::exp(a * k2 * (2.0*i)) +
-                                    std::pow(k1, 2) + 2.0 * k1 * k2 * std::exp(a * k2 * (2.0*i))), 2);
-    std::complex<double> jInc = h * k1 / m;
-    jPssd = h * k1 / m / d3pow2;
-    D = std::abs(jPssd / jInc);
+double EntryCoordinate(double E) {
+    return std::sqrt(factor / E);
+}
+
+void pass(double& D, double& R, double k1, double k2) {
+    D = k1*std::pow((k1 + k2), 2) / (4*std::pow(k1, 2)*k2);
+    R += k1*std::pow((k1 - k2), 2) / (4*std::pow(k1, 2)*k2);
+}
+
+std::tuple<double, double, unsigned long> Reflection(double E) {
+    int l = 0;
+    double D, R = 0;
+    do {
+        double k1 = std::sqrt(2.0 * m * E) / h;
+        double a = EntryCoordinate(E);
+        double k2 = std::sqrt(2.0 * m * (ScreenedCoulombPotential(a) - E)) / h;
+        pass(R, D, k1, k2);
+        E *= D;
+        }
+        l++;
+    } while (E > 0); // && std::abs(E - buf) >= eps * buf); //The case of tunneling is not considered.
+    double x0 = 0; //Just a start point for grid.
+    std::vector<double> grid (sample + 1);
+    std::generate(grid.begin(), grid.end(), [&] {return x0 += eps;});
+    std::vector<double> spline = CubicSpline(l, Ex, grid);
+    return std::make_tuple(Ebuf, R, l);
 }
 
 std::vector<double> SimpleSplineMoments(std::vector<double>& f, double step) {
@@ -92,35 +103,10 @@ double ConstStepTrapIntegral(std::vector<double>& x, std::vector<double>& f) {
     return I;
 }
 
-std::tuple<double, double, unsigned long> Reflection(double E) {
-    double jInc, D; // buf = 0;
-    std::complex<double> jPssd;
-    bool flag = true;
-    unsigned long l = 0; //Number of passed barriers;
-    double Ebuf = E;
-    E *= Ev;
-    do { //In conditions of this problem we don't have to consider a case of complex k1 and k2.
-        double k1 = std::sqrt(2.0 * m * E) / h;
-        double k2 = std::sqrt(2.0 * m * (E - U)) / h;
-        pass(jPssd, D, k1, k2);
-        //buf = E;
-        E *= D;
-        if (flag == 1) {
-            jInc = h * k1 / m; //Incoming flow.
-            flag = false;
-        }
-        l++;
-    } while (E > U); // && std::abs(E - buf) >= eps * buf); //The case of tunneling is not considered.
-    double x0 = 0; //Just a start point for grid.
-    std::vector<double> grid (sample + 1);
-    std::generate(grid.begin(), grid.end(), [&] {return x0 += eps;});
-    std::vector<double> spline = CubicSpline(l, Ex, grid);
-    double R = 1 - std::abs(jPssd / jInc);
-    return std::make_tuple(Ebuf, R, l);
-}
+
 
 void dataset (std::string& DataType, std::vector<std::tuple<double, double, unsigned long>>& xx){
-    //Function creates data-files for plots with key.
+    //Function creates data-files for plots.
     //For reading created files via Matlab use command: M = dlmread('/PATH/file'); xi = M(:,i);
     std::ofstream fout;
     fout.open(DataType);
