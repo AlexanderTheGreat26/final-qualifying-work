@@ -40,7 +40,7 @@ std::tuple<double, double, unsigned long> Reflection(double E) {
     unsigned long l = 0; //Number of current barrier;
     double Ebuf = E;
     E *= Ev;
-    do { //In conditions of this problem we don't have to consider a case of complex k1 and k2.
+    do {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         pass(jPssd, D, k1, k2);
