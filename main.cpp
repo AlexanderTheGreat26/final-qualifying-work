@@ -44,7 +44,6 @@ std::tuple<double, double, unsigned long> Reflection(double E) {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         pass(jPssd, D, k1, k2);
-        //buf = E;
         E *= D;
         if (flag == 1) {
             jInc = h * k1 / m; //Incoming flow.
