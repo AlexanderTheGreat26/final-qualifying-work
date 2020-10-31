@@ -28,7 +28,7 @@ void pass(std::complex<double>& jPssd, double& D, double k1, double k2) {
                                     std::pow((k1 * (2.0*i) - k2 * i), 2)) / std::pow((k1*k2 - std::pow(k1, 2) *
                                     std::exp(a * k2 * (2.0*i)) - std::pow(k2, 2) * std::exp(a * k2 * (2.0*i)) +
                                     std::pow(k1, 2) + 2.0 * k1 * k2 * std::exp(a * k2 * (2.0*i))), 2);
-    std::complex<double> jInc = h * k1 / m; //Incoming flow for current barrier.
+    double jInc = h * k1 / m; //Incoming flow for current barrier.
     jPssd = h * k1 / m / d3pow2;
     D = std::abs(jPssd / jInc);
 }
@@ -99,7 +99,7 @@ int main() {
     double e0 = 20; //Energy of the particle in the first case.
     double eF = 200; //Energy (Ev) of the particle in the last case.
     std::vector<double> E(eF - (e0 - 1)); //Number of problems.
-    std::generate(E.begin(), E.end(), [&] {return e0++;}); //Scatter of potential barrier height.
+    std::generate(E.begin(), E.end(), [&] {return e0++;}); //Range of potential barrier height.
     std::vector<std::tuple<double, double, unsigned long>> EnRef;
     for (unsigned i = 0; i < E.size(); i++)
         EnRef.push_back(Reflection(E[i]));
