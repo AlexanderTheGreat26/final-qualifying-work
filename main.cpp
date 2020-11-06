@@ -93,7 +93,7 @@ void plot(std::string& name, std::string& data, std::string xlabel, std::string 
                                       "set title \'" + title + "\'",
                                       "plot \'" + data + "\'using 1:2 with lines lw 2 lt rgb 'blue',\
                                       \'" + data + "\' using 1:2 lw 1 lt rgb 'orange' ti \'Nodes\'",
-                                      "set key box top left",
+                                      "set key box top right",
                                       "set terminal wxt",
                                       "set output",
                                       "replot"};
@@ -104,7 +104,7 @@ void plot(std::string& name, std::string& data, std::string xlabel, std::string 
 
 int main() {
     double FirstTask = 20;
-    double LastTask = 200;
+    double LastTask = 50;
     std::vector<double> E(LastTask - (FirstTask - 1)); //Vector of problems.
     std::generate(E.begin(), E.end(), [&] {return FirstTask++;}); //Range of potential barrier height.
     std::vector<std::pair<double, double>> data = DataSetCreation(E);
