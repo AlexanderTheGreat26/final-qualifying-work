@@ -1,6 +1,6 @@
 /*The program below consider the problems of particle fling over the semi-infinite potential of rectangular barriers
  * located at a distance from each other much more than their characteristic size (a) at different initial values of
- * energy (E).
+ * energy (E). Reflection consider only in cases of returning particle after the first barrier.
  */
 
 #include <iostream>
@@ -35,7 +35,7 @@ bool Reflection(double E, double& Refl, int l, int sign) {
         E *= D;
         R = 1 - D;
         l += sign;
-        if ((Reflection(E, R, l, -sign) && !std::isnan(R)) == 1)
+        if (Reflection(E, R, l, -sign) && !std::isnan(R) == 1)
             Refl += R;
     }
     if (l == 0)
@@ -104,7 +104,7 @@ void plot(std::string& name, std::string& data, std::string xlabel, std::string 
 
 int main() {
     double FirstTask = 20;
-    double LastTask = 50;
+    double LastTask = 200;
     std::vector<double> E(LastTask - (FirstTask - 1)); //Vector of problems.
     std::generate(E.begin(), E.end(), [&] {return FirstTask++;}); //Range of potential barrier height.
     std::vector<std::pair<double, double>> data = DataSetCreation(E);
