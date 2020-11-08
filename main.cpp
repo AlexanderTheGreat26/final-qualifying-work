@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <cmath>
-#include <complex>
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -17,7 +16,6 @@
 const double Ev = 1.602176634e-19;
 const double m = 1.6726219e-27; //Mass of particle.
 const double h = 1.054571817e-34; //Planck's constant.
-const double a = 1e-10; //Characteristic size.
 const double U = 19*Ev; //Default height of the barrier.
 
 double Passing(double& k1, double& k2) {
@@ -26,9 +24,10 @@ double Passing(double& k1, double& k2) {
 }
 
 bool Reflection(double E, double& Refl, int l, int sign) {
+    //Function computes the total reflectance of particles, which returns after first barrier.
     bool flag = false;
     double D, R;
-    while ((E > U || l > 0) && std::isnan(E) == 0) {
+    while ((E >= U || l > 0) && std::isnan(E) == 0) {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         D = Passing(k1, k2);
@@ -44,6 +43,7 @@ bool Reflection(double E, double& Refl, int l, int sign) {
 }
 
 std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
+    //Function fills vector of pairs (E, R) in order in parallel.
     std::vector<std::pair<double, double>> EnRef;
     #pragma omp parallel
     {
