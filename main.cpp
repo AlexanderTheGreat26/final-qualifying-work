@@ -13,18 +13,18 @@
 #include <string>
 #include <omp.h>
 
-const double Ev = 1.602176634e-19;
+const double eV = 1.602176634e-19; //International System of Units.
 const double m = 1.6726219e-27; //Mass of particle.
 const double h = 1.054571817e-34; //Planck's constant.
-const double U = 19*Ev; //Default height of the barrier.
+const double U = 19*eV; //Default height of the barrier.
 
+//Function counts transmission coefficient (D).
 double Passing(double& k1, double& k2) {
-    //Function counts transmission coefficient (D).
     return 4 * k1 * k2 / std::pow(k1 + k2, 2);
 }
 
+//Function computes the total reflectance of particles, which returns after first barrier.
 bool Reflection(double E, double& Refl, int l, int sign) {
-    //Function computes the total reflectance of particles, which returns after first barrier.
     bool flag = false;
     double D, R;
     while ((E >= U || l > 0) && std::isnan(E) == 0) {
@@ -42,26 +42,28 @@ bool Reflection(double E, double& Refl, int l, int sign) {
     return flag;
 }
 
+/*Function fills vector of pairs (E, R) in order in parallel.
+May be it would be better to fill the std::vector in no particular order
+in no particular order then use std::sort with comparator, but it works - stay out.*/
 std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
-    //Function fills vector of pairs (E, R) in order in parallel.
     std::vector<std::pair<double, double>> EnRef;
     #pragma omp parallel
     {
         std::vector<std::pair<double, double>> EnRef_private;
         #pragma omp for nowait schedule(static)
-        for(unsigned i = 0; i < E.size(); i++) {
+        for (unsigned i = 0; i < E.size(); i++) {
 
             //Initials.
             double R = 0;
             int l = 0;
             int direction = 1;
 
-            double Ebuf = E[i] * Ev;
+            double Ebuf = E[i] * eV;
             bool tmp = Reflection(Ebuf, R, l, direction); //tmp -- just a variable for calling a function;
-            EnRef_private.emplace_back(std::make_pair (E[i], R));
+            EnRef_private.emplace_back(std::make_pair(E[i], R));
         }
         #pragma omp for schedule(static) ordered
-        for(unsigned i = 0; i < omp_get_num_threads(); i++) {
+        for (unsigned i = 0; i < omp_get_num_threads(); i++) {
             #pragma omp ordered
             EnRef.insert(EnRef.end(), EnRef_private.begin(), EnRef_private.end());
         }
@@ -70,7 +72,6 @@ std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
 }
 
 void DataFileCreation (std::string& DataType, std::vector<std::pair<double, double>>& xx){
-    //Function creates text-file with computed data.
     //For reading created files via Matlab use command: M = dlmread('/PATH/file'); xi = M(:,i);
     std::ofstream fout;
     fout.open(DataType);
@@ -79,9 +80,9 @@ void DataFileCreation (std::string& DataType, std::vector<std::pair<double, doub
     fout.close();
 }
 
+//Function creates plots via GNUPlot.
 void plot(std::string& name, std::string& data, std::string xlabel, std::string ylabel, std::string title) {
-    //Creates plots with data-files and key.
-    //Change ".svg" to ".pdf", if you have problems with ".svg".
+    //if you have problems with ".svg", you have to change ".svg" to ".pdf" in strings bellow.
     FILE *gp = popen("gnuplot  -persist", "w");
     if (!gp)
         throw std::runtime_error("Error opening pipe to GNU plot.");
