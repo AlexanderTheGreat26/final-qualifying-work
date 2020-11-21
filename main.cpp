@@ -27,7 +27,7 @@ double Passing(double& k1, double& k2) {
 bool Reflection(double E, double& Refl, int l, int sign) {
     bool flag = false;
     double D, R;
-    while ((E >= U || l > 0) && std::isnan(E) == 0) {
+    while ((E > U || l > 0) && std::isnan(E) == 0) {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         D = Passing(k1, k2);
@@ -43,8 +43,8 @@ bool Reflection(double E, double& Refl, int l, int sign) {
 }
 
 /*Function fills vector of pairs (E, R) in order in parallel.
-May be it would be better to fill the std::vector in no particular order
-in no particular order then use std::sort with comparator, but it works - stay out.*/
+ * May be it would be better to fill the std::vector in no particular order
+ * then use std::sort() with comparator, but it works - stay out.*/
 std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
     std::vector<std::pair<double, double>> EnRef;
     #pragma omp parallel
@@ -86,21 +86,23 @@ void plot(std::string& name, std::string& data, std::string xlabel, std::string 
     FILE *gp = popen("gnuplot  -persist", "w");
     if (!gp)
         throw std::runtime_error("Error opening pipe to GNU plot.");
-    std::vector<std::string> stuff = {"set term svg",
-                                      "set out \'" + name + ".svg\'",
-                                      "set xlabel \'" + xlabel + "\'",
-                                      "set ylabel \'" + ylabel + "\'",
-                                      "set grid xtics ytics",
-                                      "set title \'" + title + "\'",
-                                      "plot \'" + data + "\'using 1:2 with lines lw 2 lt rgb 'blue',\
-                                      \'" + data + "\' using 1:2 lw 1 lt rgb 'orange' ti \'Nodes\'",
-                                      "set key box top right",
-                                      "set terminal wxt",
-                                      "set output",
-                                      "replot"};
-    for (const auto& it : stuff)
-        fprintf(gp, "%s\n", it.c_str());
-    pclose(gp);
+    else {
+        std::vector<std::string> stuff = {"set term svg",
+                                          "set out \'" + name + ".svg\'",
+                                          "set xlabel \'" + xlabel + "\'",
+                                          "set ylabel \'" + ylabel + "\'",
+                                          "set grid xtics ytics",
+                                          "set title \'" + title + "\'",
+                                          "plot \'" + data + "\'using 1:2 with lines lw 2 lt rgb 'blue',\
+                                          \'" + data + "\' using 1:2 lw 1 lt rgb 'orange' ti \'Nodes\'",
+                                          "set key box top right",
+                                          "set terminal wxt",
+                                          "set output",
+                                          "replot"};
+        for (const auto &it : stuff)
+            fprintf(gp, "%s\n", it.c_str());
+        pclose(gp);
+    }
 }
 
 int main() {
