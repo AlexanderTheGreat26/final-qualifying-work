@@ -19,7 +19,7 @@ const double h = 1.054571817e-34; //Planck's constant.
 const double U = 19*eV; //Default height of the barrier.
 
 //Function counts transmission coefficient (D).
-double Passing(double& k1, double& k2) {
+double Passing(double k1, double k2) {
     return 4 * k1 * k2 / std::pow(k1 + k2, 2);
 }
 
@@ -60,7 +60,7 @@ std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
 
             double Ebuf = E[i] * eV;
             bool tmp = Reflection(Ebuf, R, l, direction); //tmp -- just a variable for calling a function;
-            EnRef_private.emplace_back(std::make_pair(E[i], R));
+            EnRef_private.emplace_back(std::move(std::make_pair(E[i], R)));
         }
         #pragma omp for schedule(static) ordered
         for (unsigned i = 0; i < omp_get_num_threads(); i++) {
@@ -110,7 +110,7 @@ int main() {
     double LastTask = 50;
     std::vector<double> E(LastTask - (FirstTask - 1)); //Vector of problems.
     std::generate(E.begin(), E.end(), [&] {return FirstTask++;}); //Range of potential barrier height.
-    std::vector<std::pair<double, double>> data = DataSetCreation(E);
+    std::vector<std::pair<double, double>> data = std::move(DataSetCreation(E));
     std::string DataType = "Reflection";
     DataFileCreation(DataType, data);
     plot(DataType, DataType, "E, eV", "R = R(E)", DataType);
