@@ -17,6 +17,7 @@ const double eV = 1.602176634e-19; //International System of Units.
 const double m = 1.6726219e-27; //Mass of particle.
 const double h = 1.054571817e-34; //Planck's constant.
 const double U = 19*eV; //Default height of the barrier.
+const double eps = 1.0e-1; //Accuracy.
 
 //Function counts transmission coefficient (D).
 double Passing(double k1, double k2) {
@@ -26,8 +27,8 @@ double Passing(double k1, double k2) {
 //Function computes the total reflectance of particles, which returns after first barrier.
 bool Reflection(double E, double& Refl, int l, int sign) {
     bool flag = false;
-    double D, R;
-    while ((E > U || l > 0) && std::isnan(E) == 0) {
+    double D, R = 1.0;
+    while (R > eps && (E > U || l > 0) && !std::isnan(E) == 1) {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         D = Passing(k1, k2);
@@ -107,7 +108,7 @@ void plot(std::string& name, std::string& data, std::string xlabel, std::string 
 
 int main() {
     double FirstTask = 20;
-    double LastTask = 50;
+    double LastTask = 200;
     std::vector<double> E(LastTask - (FirstTask - 1)); //Vector of problems.
     std::generate(E.begin(), E.end(), [&] {return FirstTask++;}); //Range of potential barrier height.
     std::vector<std::pair<double, double>> data = std::move(DataSetCreation(E));
