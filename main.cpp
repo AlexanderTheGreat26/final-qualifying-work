@@ -17,7 +17,7 @@ const double eV = 1.602176634e-19; //International System of Units.
 const double m = 1.6726219e-27; //Mass of particle.
 const double h = 1.054571817e-34; //Planck's constant.
 const double U = 19*eV; //Default height of the barrier.
-const double eps = 1.0e-1; //Accuracy.
+const double eps = 0.23e-1; //Accuracy.
 
 //Function counts transmission coefficient (D).
 double Passing(double k1, double k2) {
@@ -60,7 +60,7 @@ std::vector<std::pair <double, double>> DataSetCreation(std::vector<double> E) {
             int direction = 1;
 
             double Ebuf = E[i] * eV;
-            bool tmp = Reflection(Ebuf, R, l, direction); //tmp -- just a variable for calling a function;
+            Reflection(Ebuf, R, l, direction); //tmp -- just a variable for calling a function;
             EnRef_private.emplace_back(std::move(std::make_pair(E[i], R)));
         }
         #pragma omp for schedule(static) ordered
