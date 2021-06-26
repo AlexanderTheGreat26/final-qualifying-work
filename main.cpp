@@ -17,7 +17,7 @@ const double eV = 1.602176634e-19; //International System of Units.
 const double m = 1.6726219e-27; //Mass of particle.
 const double h = 1.054571817e-34; //Planck's constant.
 const double U = 19*eV; //Default height of the barrier.
-const double eps = 0.23e-1; //Accuracy.
+const double eps = 0.1; //Accuracy.
 
 //Function counts transmission coefficient (D).
 double Passing(double k1, double k2) {
@@ -26,7 +26,6 @@ double Passing(double k1, double k2) {
 
 //Function computes the total reflectance of particles, which returns after first barrier.
 bool Reflection(double E, double& Refl, int l, int sign) {
-    bool flag = false;
     double D, R = 1.0;
     while (R > eps && (E > U || l > 0) && !std::isnan(E) == 1) {
         double k1 = std::sqrt(2.0 * m * E) / h;
@@ -38,9 +37,7 @@ bool Reflection(double E, double& Refl, int l, int sign) {
         if (Reflection(E, R, l, -sign) && !std::isnan(R) == 1)
             Refl += R;
     }
-    if (l == 0)
-        flag = true;
-    return flag;
+    return (l == 0);
 }
 
 /*Function fills vector of pairs (E, R) in order in parallel.
