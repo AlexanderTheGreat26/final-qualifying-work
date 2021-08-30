@@ -27,14 +27,14 @@ double Passing(double k1, double k2) {
 //Function computes the total reflectance of particles, which returns after first barrier.
 bool Reflection(double E, double& Refl, int l, int sign) {
     double D, R = 1.0;
-    while (R > eps && (E > U || l > 0) && !std::isnan(E) == 1) {
+    while (R > eps && (E > U || l > 0) && !std::isnan(E)) {
         double k1 = std::sqrt(2.0 * m * E) / h;
         double k2 = std::sqrt(2.0 * m * (E - U)) / h;
         D = Passing(k1, k2);
         E *= D;
         R = 1 - D;
         l += sign;
-        if (Reflection(E, R, l, -sign) && !std::isnan(R) == 1)
+        if (Reflection(E, R, l, -sign) && !std::isnan(R))
             Refl += R;
     }
     return (l == 0);
